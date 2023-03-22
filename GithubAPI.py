@@ -11,8 +11,8 @@ import pprint
 import os
 import requests
 
-# userInput = input("Username: ")
-userInput = "khusboo98"
+import unittest
+from unittest.mock import patch, MagicMock
 
 def gitHubFunction(userInput):
     if (userInput == "" or userInput == []):
@@ -25,15 +25,28 @@ def gitHubFunction(userInput):
         repoName = requests.get("https://api.github.com/users/" + userInput + "/repos")
         data = repoName.json()
         try:
+            result = ""
             for i in data:
                 name = i["name"]
                 commits = requests.get("https://api.github.com/repos/" + userInput + "/" + name + "/commits")
                 commits_data = len(commits.json())
-                # commits_data = commits.json()
-                print("Repo:" + name + " Number of commits: " + str(commits_data))
+                result += "Repo:" + name + " Number of commits: " + str(commits_data) + "\n"
+            return result
         except:
-            print("================================================================")
-            print("     YOU HAVE EXCEEDED YOUR API RATE LIMIT. SEE BELOW")
-            print("================================================================")
-            print(os.system("curl -i https://api.github.com/users/" + userInput))
+            return "================================================================\n     YOU HAVE EXCEEDED YOUR API RATE LIMIT. SEE BELOW\n================================================================\n" + os.system("curl -i https://api.github.com/users/" + userInput)
+
+class TestGitHubFunction(unittest.TestCase):
+    @patch('requests.get')
+    def test_gitHubFunction(self, mock_get):
+        mock_response = MagicMock()
+        mock_response.json.return_value = [{"name": "repo1"}, {"name": "repo2"}]
+        mock_get.return_value = mock_response
+
+        result = gitHubFunction("mock_username")
+        expected_result = "Repo:repo1 Number of commits: 5\nRepo:repo2 Number of commits: 10\n"
+        self.assertEqual(result, expected_result)
+
+if __name__ == '__main__':
+    unittest.main()
+
 
